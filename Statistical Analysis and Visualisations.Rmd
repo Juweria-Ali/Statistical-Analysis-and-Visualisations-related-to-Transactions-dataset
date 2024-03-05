@@ -1,0 +1,390 @@
+---
+title: "Statistical Analysis and Visualisations"
+author: "Juweria Ali"
+date: '2022-04-14'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#### Set working directory
+```{r}
+setwd("C:/Users/juwer/Desktop/MSc/Projects/Professional Development and Research Skills/Mini Projects/Part2")
+```
+#### Loading libraries
+```{r}
+library(ggplot2)
+library(dplyr)
+```
+#### Loading the dataset
+```{r}
+df = read.csv("transactions.csv", stringsAsFactors = T)
+
+summary(df)
+```
+### Section 1: Visualisations and Summary Statistics
+
+#### Square root of the observations for setting the bins
+```{r}
+round(sqrt(dim(df)[1]),0)
+```
+
+#### 1.1 Histogram plot showing the distribution of the values for model2
+```{r}
+ggplot(data = df , aes(x=model2))+geom_histogram(bins=25) + ggtitle("Distribution of values for model2")
+```
+
+#### Calculating the mean, median
+```{r}
+paste("model2")
+paste("Mean =",mean(df$model2))
+paste("Median =",median(df$model2))
+```
+
+#### Comments
+
+From the histogram above we can see that model2 shows approximately a normal distribution which is also evident from the mean and median values calculated which are almost the same i.e ~ 82.
+
+
+#### 1.2 Histogram plot showing the distribution of the values for value
+```{r}
+ggplot(data = df , aes(x=value))+geom_histogram(bins=25) + ggtitle("Distribution of values for Value")
+```
+
+#### Calculating the mean, median
+```{r}
+paste("value")
+paste("Mean =",mean(df$value))
+paste("Median =",median(df$value))
+```
+#### Comments
+
+The histogram above for value does not show a normal distribution. It is right skewed.The mean and median values calculated also make it evident as the lie to the right of the peak.
+
+
+#### 1.3 Boxplot of the value variable split by the recipient category
+```{r fig.height = 3, fig.width=6}
+ggplot(data=df, aes(y=recipient,x=value)) + geom_boxplot() + ggtitle("Value split by recipient category")
+```
+
+#### Comment critically on dependence of value on recipient:
+
+* The highest values are for recipients of type self followed by bills. 
+* Purchases and transfer values are typically lower. 
+
+
+#### Calculate statistics of value for each recipient category
+```{r}
+summarise(group_by(df,recipient), means= mean(value), stddev=sd(value))
+```
+
+#### Comments
+
+The values of mean and standard deviation above suggest that recipient type bill and self are more spread out whereas purchase and transfer are condensed.
+
+#### 1.4 Scatterplot of time against value with the points colour coded according to the device
+
+```{r fig.height = 3, fig.width=6}
+ggplot(data = df,aes(x=value, y= time))+ 
+ geom_point(size=1,shape =19,aes(colour = device))+ 
+  labs(title ='Time against Value for device', x="value",y="time", colour="device")
+```
+
+#### Calculating the correlation of value and time
+```{r}
+cor(df$value,df$time , method ="spearman")
+```
+
+#### Comment critically on dependence of time on value:
+
+We observe a weak positive correlation which is evident from the plot and the value calculated.
+From the plot above we see that mobile transactions are taking less time,compared to tablet and PC. Hence, we can say that the ticket value increases with decrease in time.
+
+
+
+#### 1.5 Two stacked barplots, one with the frequencies of device against status (and the other vice           versa)
+
+#### a) Frequency of device against status
+```{r fig.height = 3, fig.width=6}
+ggplot(df, aes(x=device,y="frequency", fill = status)) +
+  geom_bar(width= 1, stat="identity", position="stack") + ggtitle("Frequency of device against status")
+
+```
+
+#### b) Frequency of status against device
+```{r fig.height = 3, fig.width=6}
+ggplot(df, aes(x=status,y="frequency", fill = device)) +
+  geom_bar(width= 1, stat="identity", position="stack") + ggtitle("Frequency of status against device")
+
+```
+
+
+#### Comment critically on the dependence of device and status:
+
+* Higher rate of existing customers compared to new customers
+* Higher rate of mobiles and lowest is PC
+
+
+
+### Section 2: Tables and Measures
+
+
+#### 2.1 One-way table of frequencies (counts), relative proportion and cumulative frequencies for recipient
+```{r}
+count = table(df$recipient)
+count = sort(count, decr = T)
+perc = 100*round(prop.table(count),3)
+total = cumsum(count)
+cbind(Frequency = count, Percentage = perc, Cumulative = total)
+```
+
+#### Comments
+
+* Most common type of online payment was made towards purchase with 51.3%
+* Most rarest type of online payment was made to self with 8.7%
+
+
+#### 2.2 Two-way table of recipient (in rows) and status (in columns) normalised to show the fraction          of status for each recipient type
+```{r}
+tables1 <- xtabs(~ recipient+ status  , data = df)
+tables1
+```
+##### Normalising along the rows
+```{r}
+prop.table(tables1, margin=1)  
+```
+
+#### Comment critically on any interesting observations
+Purchase has the lowest average rate for existing recipients than others, whereas it has the highest average rate for new recipients.
+
+#### 2.3
+
+#### a) A table showing the mean of model2 broken down by status
+```{r}
+summarise(group_by(df,status), means = mean(model2))
+```
+#### b) A table showing the mean of model2 broken down by device
+```{r}
+summarise(group_by(df,device), means = mean(model2))
+```
+
+#### Comment critically on any interesting observations
+
+* Existing recipients has higher means than new recipients
+* PC and tablet have approximately the same means,and mobile has the lowest amongst the three.
+
+
+### Section 3: Significance Tests
+
+
+#### 3.1 Determine a 99% confidence interval for the mean value of model1 and model2. For each,state           the mean value and the confidence interval
+
+##### model1
+```{r}
+t.test(df$model1,mu = mean(df$model1), conf.level = 0.99)
+```
+##### model2
+```{r}
+t.test(df$model2,mu = mean(df$model2), conf.level = 0.99)
+```
+
+#### Comments
+
+At 99% confidence interval: 
+* mean of model1 lies in the range 70.51758 - 80.42975
+* mean of model2 lies in the range 81.55730 - 82.58537
+* Mean of model1 is lower than mean of model2
+* The region of means for model1 and model2 do not overlap which implies the means are statistically     significant.
+
+
+#### 3.2 
+
+#### a) Paired two sample t-test to test for evidence of a difference in the performance
+
+```{r}
+t.test(df$model2, y=df$model1, 
+       alternative = "two.sided", 
+       paired=T, 
+       mu= 0, 
+       sig.level=0.05)
+```
+
+#### Interpretation
+
+Ho: NULL hypothesis - there is no difference in the performance between model1 and model2.
+
+H1: Alternative hypothesis – there is a difference in the performance between model1 and model2.
+
+Above, we see that the p value is very low than the significance level,so we reject the null hypothesis and accept the alternative hypothesis that performance is significantly different.
+
+
+#### b) Performing a second t-test to assess the hypothesis that model2 outperforms model1 by a               difference of 2
+
+```{r}
+t.test(df$model2, df$model1, 
+       alternative = "greater", 
+       paired=T, 
+       mu= 2, 
+       sig.level=0.05)
+```
+
+#### Interpretation
+
+Ho: NULL hypothesis - model2 does not outperform model1 
+
+H1: Alternative hypothesis – model2 outperforms model1 by a difference of 2 
+
+Above, we see that the p value is higher than the significance threshold 0.05 so we accept the null hypothesis that model2 outperforms model1 by a difference of 2.
+
+
+#### 3.3 
+
+#### a) Non-parametric test to check for evidence of reduced performance of model2 on New recipients          compared to Existing recipients
+```{r}
+m1= df$model2[df$status == 'Existing']
+m2= df$model2[df$status == 'New']
+
+wilcox.test(m1,m2, paired = F,
+            mu=0, exact= FALSE, alternative = "greater", sig.level=0.01)
+```
+#### Interpretation 
+Ho: NULL hypothesis - there is no difference in performance of model2 on new recipients compared to                          existing recipients
+
+H1: Alternative hypothesis – there is reduced performance of model2 on new recipients compared to                                   existing recipients
+
+The p value is very low, so we can reject the null hypothesis and accept the alternative that there is a significant reduction in performance of model2 on new recipients compared to existing recipients.
+
+
+#### b) Test to check for a difference in performance of model2 for PC device compared to tablet              device
+ 
+```{r}
+m3 = df$model2[df$device == 'PC']
+m4 = df$model2[df$device == 'tablet']
+
+wilcox.test(m3,m4, paired = F,
+            mu=0, exact= FALSE, alternative = "two.sided", sig.level=0.01)
+```
+#### Interpretation
+
+Ho: NULL hypothesis - there is no difference in performance of model2 for PC device compared to tablet
+
+H1: Alternative hypothesis – there is difference in performance of model2 for PC device compared to                                 tablet
+
+The p value is higher than the significance threshold, so we can reject the alternative hypothesis and accept the null hypothesis that there is no difference in performance of model2 for PC and tablet.
+
+
+#### 3.4 One-way analysis of variance with Tukey’s multiple comparisons to compare the model2                  performance for different types of recipient
+```{r}
+anova1 <- aov(model2 ~ recipient, data =df)
+summary(anova1)
+plot(anova1,1)
+
+res= data.frame(residuals = anova1$residuals)
+ggplot(res, aes(sample = residuals)) + stat_qq() + stat_qq_line() +
+  labs(title = "Q-Q plot for the Anova residuals")
+
+shapiro.test(anova1$residuals)
+
+TukeyHSD(anova1, conf.level = 0.95)
+```
+
+#### Discussion
+
+* ANOVA test gives a very low p-value which suggests that there is a difference.
+* The qq-plot shows a normal distribution of the residuals, hence the ANOVA test is valid.
+* Both Shapiro test and qq-plot confirm the normality of residuals.
+* Tukey test identifies differences between all levels, with self-purchase being the most different at   4.3080669. The 95% confidence interval is between 2.683336 - 5.93279804.
+ 
+
+
+### Section 4:Experiment design, Sample sizes and Random Sampling
+
+
+#### 4.1 Calculate the standard deviation of model2
+```{r}
+S = sd(df$model2)
+S
+```
+Standard deviation for model2 is 4.8767
+
+
+#### 4.2 
+
+#### a) 2-sample t-test of statistical power 0.9 for establishing a difference of 2 in performance if          a two-sided test is to be performed with significance level 0.05 and the estimated standard            deviation
+```{r}
+num = ceiling(power.t.test(power = 0.9,
+                           delta = 2,
+                           sd = S,
+                           sig.level = 0.05,
+                           type = "two.sample",
+                           alternative = "two.sided")$n)
+num
+```
+
+#### b) How large a sample would be needed to increase the power of the test to 0.99 with significance        level 0.01
+
+```{r}
+num = ceiling(power.t.test(power = 0.99,
+                           delta = 2,
+                           sd = S,
+                           sig.level = 0.01,
+                           type = "two.sample",
+                           alternative = "two.sided")$n)
+num
+```
+#### Comments 
+
+* The minimum sample size required is 126 to perform a 2-sample t-test of statistical
+  power 0.9 for establishing a difference of 2 in performance if a two-sided test is to be
+  performed with significance level 0.05 and the estimated standard deviation assumed to be
+  the value calculated in task 4.1 above
+* A sample of 287 would be needed to increase the power of the test to 0.99 with significance            level 0.01 
+
+
+
+#### 4.3 Data frame using a random sample of size n from transactions (with no duplicates)
+```{r}
+num = 126
+dfsample1 = slice_sample(df,n=num)
+t= rbind(all = prop.table(table(df$recipient)), 
+          Random = prop.table(table(dfsample1$recipient))
+        )
+round(t,2)
+```
+
+#### Comparing the distribution of the recipient values in the sample to the complete dataset
+
+The occurrences of recipients in the random sample is not very same proportion wise, to the complete data set.Recipient type bill as 24% and 19%,purchase 51% and 54%,self 9% and 12%, transfer 16% and 15% respectively in the actual and random samples.
+
+
+
+#### 4.4 A stratified random sample that had occurrences of recipient in the (approximately) same              proportion as the transactions dataset. Create a dataframe (with no duplicates) of size n             with these properties and ensure that the sample is reproducible
+
+```{r}
+set.seed(123)
+num = 126
+dfGrouped = group_by(df,recipient)
+N = nrow(df)
+dfsample2 = slice_sample(dfGrouped,prop=num/N)
+t= rbind(all = prop.table(table(df$recipient)), 
+          Random = prop.table(table(dfsample1$recipient)),Stratified = prop.table(table(dfsample2$recipient)) 
+        )
+round(t,2)
+```
+
+#### Comparing the distribution of the recipient values in the stratified sample to the complete           dataset
+
+* By setting the seed we ensure the sample is reproducible.
+* The stratified sample has occurrences of recipients approximately the same, proportion wise as the     complete data set.
+
+
+
+### References
+
+* Lonnie, D., 2022. Statistics Revision. [lab]. Professional Development and Research Skills. Robert Gordon University. School of Computing Science and Digital Media, 23rd March. Available from: https://rgu.cloud.panopto.eu/Panopto/Pages/Viewer.aspx?id=05316b5c-3837-4f30-82b5-ae6300bc8df2 [Accessed 14/04/2022].
+
+* Lonnie, D., 2022. Statistics Revision. [lab]. Professional Development and Research Skills. Robert Gordon University. School of Computing Science and Digital Media, 23rd March. Available from: https://rgu.cloud.panopto.eu/Panopto/Pages/Viewer.aspx?id=a343dc05-912b-4c5c-a0f1-ae6300e48293 [Accessed 14/04/2022].
+
+    
